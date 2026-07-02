@@ -37,7 +37,8 @@ HEAL_MAX = 10             # Heal with 15 heal points
 # -----------------------------
 # Match Rules
 # -----------------------------
-FFA_START = 10            # Teams dissolve when this many remain
+SURVIVORS = 2             # Match ends when this many bots remain
+FFA_START = 5             # Teams dissolve when this many bots remain
 
 # -----------------------------
 # Scoring
@@ -45,19 +46,9 @@ FFA_START = 10            # Teams dissolve when this many remain
 ATTACK_SCORE = 1
 KILL_SCORE = 3
 
-PLACEMENT_POINTS = {
-    1: 15,
-    2: 14,
-    3: 13,
-    4: 12,
-    5: 11,
-    6: 10,
-    7: 9,
-    8: 8,
-    9: 7,
-    10: 5
-}
-
-SURVIVORS = 3
+# Placement points count down by 1 from PLACEMENT_FIRST to PLACEMENT_LAST
+# as survivors are ranked by remaining HP (1st place gets PLACEMENT_FIRST,
+# and the score never drops below PLACEMENT_LAST no matter how many
+# survivors there are).
 PLACEMENT_FIRST = 15
 PLACEMENT_LAST = 6

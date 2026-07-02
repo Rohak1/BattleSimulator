@@ -47,4 +47,4 @@ class Player:
 
         self.alive = True
 
-        self.allies = set()
+        self.friends = []

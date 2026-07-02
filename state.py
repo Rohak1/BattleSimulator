@@ -1,4 +1,4 @@
-def create_state(current_player, players, turn):
+def create_state(current_player, players, turn, ffa):
 
     return {
 
@@ -23,15 +23,17 @@ def create_state(current_player, players, turn):
                 "alive": p.alive,
                 "critical_left": p.critical_left,
                 "is_teammate": (
-                    p.name in current_player.allies
+                    p.name in current_player.friends
                     and
-                    current_player.name in p.allies
+                    current_player.name in p.friends
                 )
 
             }
 
             for p in players
 
-        ]
+        ],
+
+        "ffa": ffa
 
     }

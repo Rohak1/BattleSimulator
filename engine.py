@@ -1,19 +1,19 @@
 import random
 
 from config import (
+    FFA_START,
     SURVIVORS,
     PLACEMENT_FIRST,
     PLACEMENT_LAST
 )
+from helpers import get_player_by_name, are_teammates
 from loader import load_bots
 from player import Player
 from state import create_state
 from actions import basic_attack, critical_attack, heal
-from action import (
-    Attack,
-    Critical,
-    Heal
-)
+from action import Attack, Critical, Heal
+
+
 def run_game():
     bots = load_bots()
 
@@ -32,11 +32,11 @@ def run_game():
         )
 
         player.bot = bot
-        player.allies = set(bot.FRIENDS)
-
+        player.friends = bot.FRIENDS.copy()
         players.append(player)
 
     turn = 1
+    ffa_announced = False
 
     while True:
 
@@ -44,6 +44,14 @@ def run_game():
 
         if len(alive_players) <= SURVIVORS:
             break
+
+        ffa = len(alive_players) <= FFA_START
+
+        if ffa and not ffa_announced:
+            print("\n==========================")
+            print("   FREE FOR ALL BEGINS")
+            print("==========================\n")
+            ffa_announced = True
 
         print(f"\n========== ROUND {turn} ==========\n")
 
@@ -54,58 +62,69 @@ def run_game():
             if not player.alive:
                 continue
 
-            state = create_state(player, players, turn)
+            state = create_state(
+                current_player=player,
+                players=players,
+                turn=turn,
+                ffa=ffa
+            )
 
             action = player.bot.move(state)
 
             if isinstance(action, Attack):
 
-                target = next(
-                    (p for p in players
-                    if p.name == action.target and p.alive),
-                    None
-                )
+                target = get_player_by_name(players, action.target)
 
-                if target:
+                if target is None:
+                    continue
+                if target is player:
+                    continue
+                if not target.alive:
+                    continue
+                if are_teammates(player, target, ffa):
+                    continue
 
-                    result = basic_attack(player, target)
+                result = basic_attack(player, target)
 
+                if result["success"]:
                     print(
                         f"{player.name} attacked {target.name} "
-                        f"for {result['damage']} damage."
+                        f"for {result['damage']:.1f} damage."
+                        + (" (KO)" if result["killed"] else "")
                     )
-
-                    if result["killed"]:
-                        print(f"{target.name} was eliminated!")
 
             elif isinstance(action, Critical):
 
-                target = next(
-                    (p for p in players
-                    if p.name == action.target and p.alive),
-                    None
-                )
+                target = get_player_by_name(players, action.target)
 
-                if target:
+                if target is None:
+                    continue
+                if target is player:
+                    continue
+                if not target.alive:
+                    continue
+                if are_teammates(player, target, ffa):
+                    continue
 
-                    result = critical_attack(player, target)
+                result = critical_attack(player, target)
 
+                if result["success"]:
                     print(
-                        f"{player.name} CRITICAL attacked {target.name} "
-                        f"for {result['damage']:.2f} damage."
+                        f"{player.name} used a CRITICAL on {target.name} "
+                        f"for {result['damage']:.1f} damage."
+                        + (" (KO)" if result["killed"] else "")
                     )
-
-                    if result["killed"]:
-                        print(f"{target.name} was eliminated!")
+                else:
+                    print(f"{player.name} tried a critical but had none left.")
 
             elif isinstance(action, Heal):
 
                 result = heal(player)
 
-                print(
-                    f"{player.name} healed "
-                    f"{result['heal']} HP."
-                )
+                if result["success"]:
+                    print(f"{player.name} healed {result['heal']:.1f} HP.")
+
+            # Any other / invalid action is simply ignored (no-op turn).
 
         turn += 1
 
@@ -118,7 +137,8 @@ def run_game():
         reverse=True
     )
 
-    # Award placement points
+    # Award placement points, counting down from PLACEMENT_FIRST but
+    # never going below PLACEMENT_LAST.
     placement_points = PLACEMENT_FIRST
 
     for player in survivors:
@@ -129,6 +149,7 @@ def run_game():
             placement_points -= 1
 
     return players
+
 
 if __name__ == "__main__":
 
