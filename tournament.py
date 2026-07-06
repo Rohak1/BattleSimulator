@@ -1,6 +1,6 @@
 from engine import run_game
 
-TOTAL_GAMES = 5
+TOTAL_GAMES = 10
 
 leaderboard = {}
 
